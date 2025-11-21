@@ -1,6 +1,7 @@
 # API Backend - Planes de Viaje
 
 Aplicación NestJS para gestión de países y planes de viaje con MongoDB.
+(Entrega Preparcial)
 
 ## Descripción
 
