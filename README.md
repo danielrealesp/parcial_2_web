@@ -17,6 +17,37 @@ Clean Architecture con:
 - **Providers**: Abstracción para APIs externas (RestCountries)
 - **DTOs**: Validación con class-validator
 - **Schemas**: Modelos Mongoose para MongoDB
+- **Middleware**: Logging HTTP automático de todas las peticiones
+- **Guards**: Autenticación mediante API key para endpoints protegidos
+
+## Características
+
+### Logging Automático
+Todas las peticiones HTTP son registradas automáticamente con:
+- **Método HTTP** (GET, POST, DELETE, etc.)
+- **Ruta** solicitada
+- **Código de respuesta** (200, 404, 401, etc.)
+- **Tiempo de ejecución** en milisegundos
+
+**Ejemplo de logs:**
+```
+[HTTP] → GET /countries
+[HTTP] ← GET /countries 200 - 45ms
+
+[HTTP] → DELETE /countries/COL
+[HTTP] ← DELETE /countries/COL 401 - 12ms
+
+[HTTP] → POST /travel-plans
+[HTTP] ← POST /travel-plans 201 - 234ms
+```
+
+Los logs utilizan diferentes niveles según el código de respuesta:
+- `LOG` (verde): 2xx y 3xx - Éxito
+- `WARN` (amarillo): 4xx - Errores del cliente
+- `ERROR` (rojo): 5xx - Errores del servidor
+
+### Autenticación
+Endpoints protegidos requieren el header `x-api-key` con una clave válida. La validación se implementa mediante un Guard de NestJS aplicado a rutas específicas.
 
 ## Requisitos
 
@@ -80,6 +111,36 @@ GET /countries/:code
 }
 ```
 
+**Eliminar país**
+```http
+DELETE /countries/:code
+```
+- Parámetro: `code` (alpha-3, ej: "COL", "FRA")
+- **Requiere autenticación**: Header `x-api-key` con API key válida
+- Retorna: `204 No Content` si se elimina exitosamente
+- Retorna: `401 Unauthorized` si la API key es inválida o no está presente
+- Retorna: `404 Not Found` si el país no existe en la base de datos
+
+**Ejemplo de uso:**
+```bash
+curl -X DELETE http://localhost:8080/countries/COL \
+  -H "x-api-key: dev-secret-key-12345"
+```
+
+**Errores de autenticación:**
+```json
+{
+  "statusCode": 401,
+  "message": "API key is missing. Please provide a valid API key in the x-api-key header."
+}
+```
+```json
+{
+  "statusCode": 401,
+  "message": "Invalid API key. Please provide a valid API key."
+}
+```
+
 ### Planes de Viaje
 
 **Crear plan de viaje**
@@ -123,6 +184,7 @@ GET /travel-plans/:id
 | `PORT` | Puerto de la aplicación | `8080` |
 | `MONGODB_URI` | Conexión MongoDB | `mongodb://mongodb:27017/parcial2` |
 | `REST_COUNTRIES_API_URL` | URL API RestCountries | `https://restcountries.com/v3.1` |
+| `API_KEY` | Clave API para endpoints protegidos | `dev-secret-key-12345` |
 
 ## Scripts de Desarrollo
 
@@ -232,4 +294,24 @@ curl -X POST http://localhost:8080/travel-plans \
     "endDate": "2024-07-01"
   }'
 # Response: Error de validación
+```
+
+### 6. Eliminar país sin API key (debe fallar)
+```bash
+curl -X DELETE http://localhost:8080/countries/COL
+# Response: 401 Unauthorized - "API key is missing..."
+```
+
+### 7. Eliminar país con API key inválida (debe fallar)
+```bash
+curl -X DELETE http://localhost:8080/countries/COL \
+  -H "x-api-key: wrong-key"
+# Response: 401 Unauthorized - "Invalid API key..."
+```
+
+### 8. Eliminar país con API key válida
+```bash
+curl -X DELETE http://localhost:8080/countries/COL \
+  -H "x-api-key: dev-secret-key-12345"
+# Response: 204 No Content (eliminación exitosa)
 ```

@@ -79,4 +79,21 @@ export class CountriesService {
 
     return country._id;
   }
+
+  /**
+   * Deletes a country from the database by its alpha-3 code
+   * @param code - The alpha-3 country code
+   * @returns void
+   */
+  async deleteByCode(code: string): Promise<void> {
+    this.logger.log(`Attempting to delete country with code: ${code}`);
+
+    const result = await this.countryModel.deleteOne({ code }).exec();
+
+    if (result.deletedCount === 0) {
+      throw new NotFoundException(`Country with code ${code} not found`);
+    }
+
+    this.logger.log(`Country ${code} deleted successfully`);
+  }
 }

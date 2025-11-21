@@ -27,6 +27,7 @@ services:
       - NODE_ENV=production
       - MONGODB_URI=mongodb://mongodb:27017/parcial2
       - REST_COUNTRIES_API_URL=https://restcountries.com/v3.1
+      - API_KEY=dev-secret-key-12345
     networks:
       - parcial2-network
 
