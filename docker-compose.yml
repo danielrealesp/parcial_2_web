@@ -1,0 +1,39 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: parcial2-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: parcial2
+    networks:
+      - parcial2-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parcial2-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongodb
+    environment:
+      - PORT=8080
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/parcial2
+      - REST_COUNTRIES_API_URL=https://restcountries.com/v3.1
+    networks:
+      - parcial2-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  parcial2-network:
+    driver: bridge
